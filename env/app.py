@@ -29,6 +29,16 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
+class Show(db.Model):
+  __tablename__='show'
+  
+  id = db.Column(db.Integer, primary_key=True)
+  start_time = db.Column(db.DateTime , nullable=False, default =datetime.utcnow)
+  venue_id = db.Column(db.Integer,db.ForeignKey('venue.id'),nullable=False)
+  artist_id = db.Column(db.Integer,db.ForeignKey('artist.id'),nullable=False)
+  
+  def __repr__(self):
+    return '<Show artist id :{}, venue id : {}, start time : {}>'.format(self.artist_id, self.venue_id,self.start_time)
 
 class Venue(db.Model):
     __tablename__ = 'venue'
@@ -42,6 +52,9 @@ class Venue(db.Model):
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(120))
+    shows = db.relationship('Show', backref='venue', lazy=True)
     
     def __repr__(self):
       return f'id: {self.id},name: {self.name}'
@@ -59,6 +72,9 @@ class Artist(db.Model):
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    seeking_shows = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(120))
+    shows = db.relationship('Show', backref='artist', lazy=True)
     
     def __repr__(self):
       return f'id: {self.id},name: {self.name}'
@@ -100,7 +116,9 @@ def venues():
   #       num_shows should be aggregated based on number of upcoming shows per venue. - Done
   data=Venue.query.all()
   print(data)
-  
+
+
+    
   
   """ data=[{
     "city": "San Francisco",
@@ -208,7 +226,6 @@ def delete_venue(venue_id):
    # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
   # return None
-  print('welcome beeeek')
   error = False
   tempname=''
   try:
@@ -226,8 +243,10 @@ def delete_venue(venue_id):
      
      
   if error:
+    print('error exist')
     flash('An error occurred. Venue ' + tempname + ' could not be deleted.')
   else:
+    print('no error exist')
     flash('Venue ' + tempname + ' was successfully deleted!')
     
   return render_template('pages/home.html')
@@ -422,7 +441,23 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
+  
+  shows=Show.query.all()
+ 
+  data=[]
+  for show in shows:
+    artist = Artist.query.get(show.artist_id)
+    venue = Venue.query.get(show.venue_id)
+    data.append({
+        "venue_id": show.venue_id,
+        "venue_name": venue.name,
+        "artist_id": show.artist_id,
+        "artist_name": artist.name,
+        "artist_image_link": artist.image_link,
+        "start_time": str(show.start_time)
+      })
+  
+  """ data=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
     "artist_id": 4,
@@ -457,7 +492,7 @@ def shows():
     "artist_name": "The Wild Sax Band",
     "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
     "start_time": "2035-04-15T20:00:00.000Z"
-  }]
+  }] """
   return render_template('pages/shows.html', shows=data)
 
 @app.route('/shows/create')
@@ -470,9 +505,35 @@ def create_shows():
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
+  error =False
+  try:
+    #get form data
+   show_venueid = request.form.get('venue_id')
+   show_datetime = request.form.get('start_time')
+   show_artistid = request.form.get('artist_id')
+   #create new model object
+   newshow  = Show(start_time=show_datetime,venue_id =show_venueid,artist_id=show_artistid)
+   #add model to session and commit
+   db.session.add(newshow)
+   db.session.commit()
+   error=False
+  except():
+   error=True
+   print(sys.exc_info())
+   db.session.rollback()
+  finally:
+    db.session.close()
+      
+  if error:
+    flash('failed to create show')
+   
+  else:
+    flash('Show was successfully listed!')
+     
+  
 
   # on successful db insert, flash success
-  flash('Show was successfully listed!')
+  #flash('Show was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/

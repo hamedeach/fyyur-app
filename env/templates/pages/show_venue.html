@@ -46,9 +46,10 @@
 		<img src="{{ venue.image_link }}" alt="Venue Image" />
 	</div>
 	<div>
-		<form class="form" method="DELETE" action="/venues/{{venue.id}}">
+		<!-- <form class="form" method="DELETE" action="/venues/{{venue.id}}">
 			<input type="submit" value="Delete" class="btn btn-primary"/>
-		</form>
+		</form> -->
+		<button data-id="{{venue.id}}" class="btn btn-primary delete-button">Delete Venue</button>
 		
 	</div>
 </div>
@@ -80,7 +81,24 @@
 		{% endfor %}
 	</div>
 </section>
-
+<script>
+	const deleteBtns = document.querySelectorAll('.delete-button');
+	delBtn = deleteBtns[0];
+	delBtn.onclick = function(e)
+	{
+		const venus_id = e.target.dataset['id'];
+		console.log('Venue with id '+venus_id+' will be delete ')
+		fetch('/venues/'+venus_id,
+        {
+            method : 'DELETE'
+		}).catch(function()
+		{
+         console.log('Error can not be deleted')
+                   
+         })
+		
+	}
+</script>
 {% endblock %}
 
 
