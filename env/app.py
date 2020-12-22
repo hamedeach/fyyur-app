@@ -330,7 +330,60 @@ def search_artists():
 def show_artist(artist_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
-  data = Artist.query.get(artist_id)
+  # Venue.query.filter(Venue.city==state[1] and Venue.state ==state[0]).all()
+  artists = Artist.query.get(artist_id)
+  print(artists)
+  print('---------------------------')
+  print( artists.shows)
+  print( len( artists.shows))
+  past_show =  list(filter(lambda d:d.start_time < datetime.today(), artists.shows))
+  print('xxxxxx')
+  print(past_show)
+  print(len(past_show))
+  upcoming_show =  list(filter(lambda d:d.start_time >= datetime.today(), artists.shows))
+  print('yyyyyyy')
+  print(upcoming_show)
+  data_upcoming = []
+  data_past = []
+  
+  for show in upcoming_show:
+    myvenue = Venue.query.get(show.venue_id)
+    data_upcoming.append({
+      "venue_id": myvenue.id,
+      "venue_name": myvenue.name,
+      "artist_image_link": artists.image_link,
+      "start_time": str( show.start_time)
+    })
+    
+  for show in past_show:
+    myvenue = Venue.query.get(show.venue_id)
+    data_past.append({
+      "venue_id": myvenue.id,
+      "venue_name": myvenue.name,
+      "artist_image_link": artists.image_link,
+      "start_time": str( show.start_time)
+    })
+ 
+  
+  
+
+  
+  
+  data={
+    "id": artists.id,
+    "name": artists.name,
+    "genres": artists.genres,
+    "city": artists.city,
+    "state": artists.state,
+    "phone": artists.phone,
+    "facebook_link": artists.facebook_link,
+    "seeking_description": artists.seeking_description,
+    "image_link": artists.image_link,
+    "past_shows": data_past,
+    "upcoming_shows": data_upcoming,
+    "past_shows_count": len(past_show),
+    "upcoming_shows_count":len(upcoming_show),
+  }
  
   return render_template('pages/show_artist.html', artist=data)
 
