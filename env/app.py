@@ -14,6 +14,7 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 import sys
+from sqlalchemy import func
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -116,9 +117,35 @@ def venues():
   #       num_shows should be aggregated based on number of upcoming shows per venue. - Done
   data=Venue.query.all()
   print(data)
+  data=[]
+  states =  db.session.query(Venue.state,Venue.city).group_by(Venue.state,Venue.city).all()
+  print(states)
+  for state in states:
+    data.append({
+      "city" : state[1],
+      "state": state[0]
+    })
+    venueslst =  Venue.query.filter(Venue.city==state[1] and Venue.state ==state[0]).all()
+    for ven in venueslst:
+      data.append({
+        "venues" : venueslst
+      })
 
-
-    
+  
+ 
+  """ data=[]
+  for show in shows:
+    artist = Artist.query.get(show.artist_id)
+    venue = Venue.query.get(show.venue_id)
+    data.append({
+        "venue_id": show.venue_id,
+        "venue_name": venue.name,
+        "artist_id": show.artist_id,
+        "artist_name": artist.name,
+        "artist_image_link": artist.image_link,
+        "start_time": str(show.start_time)
+      })
+     """
   
   """ data=[{
     "city": "San Francisco",
